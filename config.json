@@ -1,0 +1,61 @@
+{
+  "mysqlURL":"jdbc:mysql://localhost:3306/",
+  "mysqluser":"",
+  "mysqlpassword":"",
+  "datasets":[
+    {
+      "databaseName": "train",
+      "url":"https://github.com/dachafra/spaingtfs/raw/master/datasets/madrid/train.zip",
+      "compression":"zip",
+      "mapping":"/home/dchaves/mappings/rmlc/RMLC/datasets/mappings/crtm.rmlc.ttl"
+    },
+    {
+      "databaseName": "caceres",
+      "url":"https://github.com/dachafra/spaingtfs/raw/master/datasets/caceres/caceres.zip",
+      "compression":"zip",
+      "mapping":"/home/dchaves/mappings/rmlc/RMLC/datasets/mappings/crtm.rmlc.ttl"
+    },
+    {
+      "databaseName": "tram",
+      "url":"https://github.com/dachafra/spaingtfs/raw/master/datasets/madrid/tram.zip",
+      "compression":"zip",
+      "mapping":"/home/dchaves/mappings/rmlc/RMLC/datasets/mappings/crtm.rmlc.ttl"
+    },
+    {
+      "databaseName": "amb",
+      "url":"https://github.com/dachafra/spaingtfs/raw/master/datasets/barcelona/amb.zip",
+      "compression":"zip",
+      "mapping":"/home/dchaves/mappings/rmlc/RMLC/datasets/mappings/crtm.rmlc.ttl"
+    },
+    {
+      "databaseName": "emt",
+      "url":"https://github.com/dachafra/spaingtfs/raw/master/datasets/madrid/emt.zip",
+      "compression":"zip",
+      "mapping":"/home/dchaves/mappings/rmlc/RMLC/datasets/mappings/crtm.rmlc.ttl"
+    },
+    {
+      "databaseName": "amb",
+      "url":"https://github.com/dachafra/spaingtfs/raw/master/datasets/barcelona/amb.zip",
+      "compression":"zip",
+      "mapping":"/home/dchaves/mappings/rmlc/RMLC/datasets/mappings/crtm.rmlc.ttl"
+    },
+    {
+      "databaseName": "tbs",
+      "url":"https://github.com/dachafra/spaingtfs/raw/master/datasets/barcelona/TBS.zip",
+      "compression":"zip",
+      "mapping":"/home/dchaves/mappings/rmlc/RMLC/datasets/mappings/crtm.rmlc.ttl"
+    },
+    {
+      "databaseName": "tbx",
+      "url":"https://github.com/dachafra/spaingtfs/raw/master/datasets/barcelona/TBX.zip",
+      "compression":"zip",
+      "mapping":"/home/dchaves/mappings/rmlc/RMLC/datasets/mappings/crtm.rmlc.ttl"
+    },
+    {
+      "databaseName": "metro",
+      "url":"https://github.com/dachafra/spaingtfs/raw/master/datasets/madrid/metro.zip",
+      "compression":"zip",
+      "mapping":"/home/dchaves/mappings/rmlc/RMLC/datasets/mappings/crtm.rmlc.ttl"
+    }
+  ]
+}
