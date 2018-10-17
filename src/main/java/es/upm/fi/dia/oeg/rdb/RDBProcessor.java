@@ -3,15 +3,14 @@ package es.upm.fi.dia.oeg.rdb;
 
 import es.upm.fi.dia.oeg.Utils;
 import es.upm.fi.dia.oeg.rmlc.api.model.*;
-import org.apache.jena.tdb.store.Hash;
 import org.json.JSONArray;
-import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
+
 
 public class RDBProcessor{
 
@@ -48,6 +47,7 @@ public class RDBProcessor{
         for(Map.Entry<String, Collection<TriplesMap>> entry : mapping.entrySet()) {
             String name = entry.getKey();
             HashMap<String,HashMap<String,String>> functions = new HashMap<>();
+            HashMap<String,HashMap<String,String>> joinFunctions = new HashMap<>();
             CSVTransformation csvTransformation = new CSVTransformation(null, null, name,false);
             HashMap<String,String[]> firstRow = csvTransformation.getFirstRow();
             entry.getValue().forEach(triplesMap -> {
@@ -56,6 +56,7 @@ public class RDBProcessor{
                     if(firstRowEntry.getKey().equals(tableName)){
                         rdb+=this.createTable(triplesMap, firstRowEntry.getValue(), tableName.toUpperCase());
                         functions.put(tableName,getColumnsFromFunctions(triplesMap.getPredicateObjectMaps()));
+                        joinFunctions.putAll(getJoinFunctions(triplesMap.getPredicateObjectMaps(),tableName));
                         break;
                     }
                 }
@@ -69,6 +70,7 @@ public class RDBProcessor{
                 writer.close();
                 rdbConexion.createDatabase(name,rdb);
                 rdbConexion.updateDataWithFunctions(functions,name);
+                rdbConexion.updateDataWithFunctions(joinFunctions,name);
                 rdb="";
             }catch (IOException e){
                 _log.error("Error writing the SQL file: "+e.getMessage());
@@ -225,7 +227,7 @@ public class RDBProcessor{
 
 
     private HashMap<String,String> getColumnsFromFunctions(List<PredicateObjectMap> predicateObjectMaps){
-        HashMap<String,String> columnsFucntions = new HashMap<>();
+        HashMap<String,String> columnsFunctions = new HashMap<>();
 
         for(PredicateObjectMap p : predicateObjectMaps){
             List<ObjectMap> objectMaps = p.getObjectMaps();
@@ -234,14 +236,48 @@ public class RDBProcessor{
                     List<PredicateMap> predicateMaps = p.getPredicateMaps();
                     for(PredicateMap pm : predicateMaps){
                        String t= pm.getConstant().ntriplesString();
-                        columnsFucntions.put(t.split("#")[1].replace(">","") + " VARCHAR(200)",o.getFunction());
+                        columnsFunctions.put(t.split("#")[1].replace(">","") + " VARCHAR(200)",o.getFunction());
                     }
                 }
             }
         }
-        return columnsFucntions;
+        return columnsFunctions;
 
     }
+
+    private HashMap<String,HashMap<String,String>> getJoinFunctions(List<PredicateObjectMap> predicateObjectMaps, String child_table_name){
+        HashMap<String,HashMap<String,String>> joinFunction = new HashMap<>();
+        for(PredicateObjectMap p : predicateObjectMaps){
+            List<RefObjectMap> refObjectMaps = p.getRefObjectMaps();
+            List<PredicateMap>  predicateMaps = p.getPredicateMaps();
+            for(RefObjectMap refObjectMap : refObjectMaps){
+                String parent_table_name = ((SQLBaseTableOrView) refObjectMap.getParentMap().getLogicalSource()).getTableName().toLowerCase().replace(".csv","");
+                List<Join> join = refObjectMap.getJoinConditions();
+                for(Join j : join ){
+                    String child_function = j.getChild().getFunctions();
+                    String parent_function = j.getParent().getFunctions();
+                    for(PredicateMap pm : predicateMaps){
+                        HashMap<String, String> functions_column = new HashMap<>();
+                        String t= pm.getConstant().ntriplesString().split("#")[1].replace(">","") + " VARCHAR(200)";
+                        if(!parent_function.isEmpty()) {
+                            functions_column.put(t, parent_function);
+                            joinFunction.put(parent_table_name, (HashMap<String, String>) functions_column.clone());
+                        }
+                        functions_column.clear();
+                        if(!child_function.isEmpty()) {
+                            functions_column.put(t, child_function);
+                            joinFunction.put(child_table_name, (HashMap<String, String>) functions_column.clone());
+                        }
+
+                    }
+                }
+            }
+        }
+        return joinFunction;
+
+    }
+
+
 
 
 }

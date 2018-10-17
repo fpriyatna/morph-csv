@@ -4,6 +4,7 @@ package es.upm.fi.dia.oeg.rdb;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.management.relation.RelationSupport;
 import java.io.File;
 import java.sql.*;
 import java.util.HashMap;
@@ -37,7 +38,7 @@ public class RDBConexion {
     public void createTables(String tables, String rdb){
         try {
             Class.forName ("org.h2.Driver");
-            Connection c = DriverManager.getConnection("jdbc:h2:~/test", "sa", "");
+            Connection c = DriverManager.getConnection("jdbc:h2:~/"+rdb, "sa", "");
             Statement s=c.createStatement();
             String[] st = tables.split("\n");
             for(String saux : st) {
@@ -73,7 +74,7 @@ public class RDBConexion {
     public void updateDataWithFunctions (HashMap<String,HashMap<String,String>> functions, String rdb){
         long startTime = System.currentTimeMillis();
         try {
-            Connection c = DriverManager.getConnection("jdbc:h2:~/test", "sa", "");
+            Connection c = DriverManager.getConnection("jdbc:h2:~/"+rdb, "sa", "");
             Statement s = c.createStatement();
             for(Map.Entry<String,HashMap<String,String>> entry : functions.entrySet()){
                 String table_name = entry.getKey();
@@ -85,8 +86,24 @@ public class RDBConexion {
                     s.execute("UPDATE "+table_name+" SET "+alter_column.split(" ")[0]+"="+function_exp+";");
 
                 }
-            }
+                ResultSet rs = s.executeQuery("SELECT * FROM "+table_name+";");
+                ResultSetMetaData metadata = rs.getMetaData();
+                int columnCount = metadata.getColumnCount();
+                String row="";
+                for (int i = 1; i <= columnCount; i++) {
+                    row+=metadata.getColumnName(i) + ", ";
+                }
+                System.out.println(row);
+                while (rs.next()) {
+                    row = "";
+                    for (int i = 1; i <= columnCount; i++) {
+                        row += rs.getString(i) + ", ";
+                    }
+                    System.out.println(row);
 
+
+                }
+            }
             s.close();c.close();
 
         }catch (Exception e){
@@ -95,6 +112,5 @@ public class RDBConexion {
         long stopTime = System.currentTimeMillis();
         long elapsedTime = stopTime - startTime;
         _log.info("The "+rdb+" has been updated in H2 successfully in: "+elapsedTime+"ms");
-
     }
 }

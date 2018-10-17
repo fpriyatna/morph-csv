@@ -2,6 +2,7 @@ package es.upm.fi.dia.oeg;
 
 import es.upm.fi.dia.oeg.iterator.IteratorTransformer;
 import es.upm.fi.dia.oeg.rdb.RDBProcessor;
+import es.upm.fi.dia.oeg.translation.MappingTransformation;
 import org.apache.commons.cli.CommandLine;
 
 
@@ -33,7 +34,10 @@ public class RMLC
 
         utils.loadMappings();
 
-        rdbProcessor.createDatabases();
+       // rdbProcessor.createDatabases();
+
+        MappingTransformation mappingTransformation = new MappingTransformation();
+        mappingTransformation.generateR2RML(utils);
 
 
 
