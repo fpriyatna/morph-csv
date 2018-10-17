@@ -151,7 +151,7 @@ public class CSVTransformation {
     }
 
     public HashMap<String,String[]> getFirstRow(){
-        File folder = new File("datasets/"+rdb);
+        File folder = new File("datasets/"+rdb+"/data");
         File[] listOfFiles = folder.listFiles();
         HashMap<String,String[]> firstRow = new HashMap<>();
         try {

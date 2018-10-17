@@ -29,35 +29,36 @@ public class Utils {
     public Utils (String path){
        this.mappings = new HashMap<>();
        setConfig(path);
-      // loadMappings();
+       downloadMappings();
     }
 
 
 
-    private String downloadMapping(String url,String name){
-        String content="";
-        try {
-            if (url.matches("http.*")) {
-                BufferedReader reader = new BufferedReader(new InputStreamReader(new URL(url).openStream()));
-                content = reader.lines().collect(Collectors.joining());
-            }
-            else{
-                try {
-                    content = new String(Files.readAllBytes(Paths.get(url)));
-                }catch (IOException e){
-                    _log.error("Error reading the mapping file: "+e.getMessage());
-                    return null;
+    public void downloadMappings(){
+        JSONArray datasets = config.getJSONArray("datasets");
+        for(Object d : datasets) {
+            String url = ((JSONObject) d).getString("mapping");
+            String name =  ((JSONObject) d).getString("databaseName");
+            String content="";
+            try {
+                if (url.matches("http.*")) {
+                    BufferedReader reader = new BufferedReader(new InputStreamReader(new URL(url).openStream()));
+                    content = reader.lines().collect(Collectors.joining());
+                } else {
+                    try {
+                        content = new String(Files.readAllBytes(Paths.get(url)));
+                    } catch (IOException e) {
+                        _log.error("Error reading the mapping file: " + e.getMessage());
+                    }
                 }
+                File f = new File("datasets/" + name + "/mapping.rmlc.ttl");
+                BufferedWriter writer = new BufferedWriter(new FileWriter(f, false));
+                writer.write(content);
+                writer.close();
+            } catch (Exception e) {
+                _log.error("Error getting the mapping content: " + e.getMessage());
             }
-            File f = new File("datasets/mappings/"+name+".rmlc.ttl");
-            BufferedWriter writer = new BufferedWriter(new FileWriter(f, false));
-            writer.write(content);
-            writer.close();
-        }catch (Exception e){
-            _log.error("Error getting the mapping content: "+e.getMessage());
         }
-        return content;
-
     }
 
     public String getMappingContent(String path){
@@ -71,11 +72,8 @@ public class Utils {
     }
 
     public String getMappingPath(String databaseName){
-        return "datasets/mappings/"+databaseName+".rmlc.ttl";
+        return "datasets/"+databaseName+"/mapping.rmlc.ttl";
     }
-
-
-
 
     public HashMap<String, Collection<TriplesMap>> getMappings() {
         return mappings;
@@ -92,13 +90,13 @@ public class Utils {
     public void loadMappings(){
         JSONArray datasets = config.getJSONArray("datasets");
         for(Object object: datasets) {
-            JSONObject dataset = (JSONObject) object;
+            String database_name = ((JSONObject) object).getString("databaseName");
             JenaRMLCMappingManager mm = JenaRMLCMappingManager.getInstance();
             Model m = ModelFactory.createDefaultModel();
-            m = m.read(dataset.getString("mapping"));
+            m = m.read(this.getMappingPath(database_name));
             try {
                 Collection<TriplesMap> triplesMaps = mm.importMappings(m);
-                mappings.put(dataset.getString("databaseName"),triplesMaps);
+                mappings.put(database_name,triplesMaps);
             } catch (InvalidRMLCMappingException e) {
                 _log.error("Exception in read mapping: " + e.getMessage());
             }

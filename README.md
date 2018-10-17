@@ -1,2 +1,2 @@
 # RMLC
-RDF Mapping Language for heterogeneous CSV files
+Ontology Based Data Access approach for heterogeneous CSV files

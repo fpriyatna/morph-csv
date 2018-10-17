@@ -31,6 +31,10 @@ public class RMLC
         IteratorTransformer iteratorTransformer = new IteratorTransformer(utils);
         iteratorTransformer.run();
 
+        utils.loadMappings();
+
+        rdbProcessor.createDatabases();
+
 
 
     }

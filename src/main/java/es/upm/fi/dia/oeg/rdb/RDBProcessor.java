@@ -3,6 +3,7 @@ package es.upm.fi.dia.oeg.rdb;
 
 import es.upm.fi.dia.oeg.Utils;
 import es.upm.fi.dia.oeg.rmlc.api.model.*;
+import org.apache.jena.tdb.store.Hash;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.slf4j.Logger;
@@ -22,8 +23,8 @@ public class RDBProcessor{
 
 
     public RDBProcessor(Utils utils){
-        this.datasets = utils.getConfig().getJSONArray("dataset");
-        this.rdbConexion = new RDBConexion(utils.getConfig());
+        this.datasets = utils.getConfig().getJSONArray("datasets");
+        this.rdbConexion = new RDBConexion();
         this.mapping = utils.getMappings();
     }
 
@@ -46,13 +47,15 @@ public class RDBProcessor{
     public void createRDB(){
         for(Map.Entry<String, Collection<TriplesMap>> entry : mapping.entrySet()) {
             String name = entry.getKey();
+            HashMap<String,HashMap<String,String>> functions = new HashMap<>();
             CSVTransformation csvTransformation = new CSVTransformation(null, null, name,false);
             HashMap<String,String[]> firstRow = csvTransformation.getFirstRow();
             entry.getValue().forEach(triplesMap -> {
                 for(Map.Entry<String,String[]> firstRowEntry : firstRow.entrySet()){
-                    String tableName =((SQLBaseTableOrView) triplesMap.getLogicalTable()).getTableName().toLowerCase();
+                    String tableName =((SQLBaseTableOrView) triplesMap.getLogicalSource()).getTableName().toLowerCase().replace(".csv","");
                     if(firstRowEntry.getKey().equals(tableName)){
                         rdb+=this.createTable(triplesMap, firstRowEntry.getValue(), tableName.toUpperCase());
+                        functions.put(tableName,getColumnsFromFunctions(triplesMap.getPredicateObjectMaps()));
                         break;
                     }
                 }
@@ -61,10 +64,11 @@ public class RDBProcessor{
 
             try{
                 BufferedWriter writer = new BufferedWriter
-                        (new OutputStreamWriter(new FileOutputStream("sql/"+name+".sql"), StandardCharsets.UTF_8));
+                        (new OutputStreamWriter(new FileOutputStream("datasets/"+name+"/database.sql"), StandardCharsets.UTF_8));
                 writer.write(rdb);
                 writer.close();
                 rdbConexion.createDatabase(name,rdb);
+                rdbConexion.updateDataWithFunctions(functions,name);
                 rdb="";
             }catch (IOException e){
                 _log.error("Error writing the SQL file: "+e.getMessage());
@@ -82,7 +86,7 @@ public class RDBProcessor{
                         StringTokenizer st = new StringTokenizer(objectMap.getDatatype().getIRIString(),"#");
                         if(st.nextToken().equals("http://www.w3.org/2001/XMLSchema")) {
                             //checking numbers
-                            CSVTransformation csvTransformation = new CSVTransformation(objectMap.getColumn(),((SQLBaseTableOrView) triplesMap.getLogicalTable()).getTableName(), rdb, true);
+                            CSVTransformation csvTransformation = new CSVTransformation(objectMap.getColumn(),((SQLBaseTableOrView) triplesMap.getLogicalSource()).getTableName(), rdb, true);
                             String type = st.nextToken();
                             if (type.matches("decimal|integer|double")) {
                                 //ToDo accept SQL views.
@@ -217,6 +221,26 @@ public class RDBProcessor{
             columNames.addAll(o.getTemplate().getColumnNames());
         }
         return  columNames;
+    }
+
+
+    private HashMap<String,String> getColumnsFromFunctions(List<PredicateObjectMap> predicateObjectMaps){
+        HashMap<String,String> columnsFucntions = new HashMap<>();
+
+        for(PredicateObjectMap p : predicateObjectMaps){
+            List<ObjectMap> objectMaps = p.getObjectMaps();
+            for(ObjectMap o : objectMaps){
+                if(o.getFunction()!=null && !o.getFunction().isEmpty()){
+                    List<PredicateMap> predicateMaps = p.getPredicateMaps();
+                    for(PredicateMap pm : predicateMaps){
+                       String t= pm.getConstant().ntriplesString();
+                        columnsFucntions.put(t.split("#")[1].replace(">","") + " VARCHAR(200)",o.getFunction());
+                    }
+                }
+            }
+        }
+        return columnsFucntions;
+
     }
 
 
