@@ -86,23 +86,6 @@ public class RDBConexion {
                     s.execute("UPDATE "+table_name+" SET "+alter_column.split(" ")[0]+"="+function_exp+";");
 
                 }
-                ResultSet rs = s.executeQuery("SELECT * FROM "+table_name+";");
-                ResultSetMetaData metadata = rs.getMetaData();
-                int columnCount = metadata.getColumnCount();
-                String row="";
-                for (int i = 1; i <= columnCount; i++) {
-                    row+=metadata.getColumnName(i) + ", ";
-                }
-                System.out.println(row);
-                while (rs.next()) {
-                    row = "";
-                    for (int i = 1; i <= columnCount; i++) {
-                        row += rs.getString(i) + ", ";
-                    }
-                    System.out.println(row);
-
-
-                }
             }
             s.close();c.close();
 

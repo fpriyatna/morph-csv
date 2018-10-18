@@ -34,7 +34,7 @@ public class RMLC
 
         utils.loadMappings();
 
-       // rdbProcessor.createDatabases();
+        rdbProcessor.createDatabases();
 
         MappingTransformation mappingTransformation = new MappingTransformation();
         mappingTransformation.generateR2RML(utils);
