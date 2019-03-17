@@ -5,11 +5,11 @@
   <modelVersion>4.0.0</modelVersion>
 
   <groupId>es.upm.fi.dia.oeg</groupId>
-  <artifactId>rmlc</artifactId>
+  <artifactId>satet</artifactId>
   <version>1.0-SNAPSHOT</version>
 
-  <name>rmlc</name>
-  <url>http://www.github.com/RMLCio</url>
+  <name>satet</name>
+  <url>http://www.github.com/SATET-OBDA/SATET</url>
   <repositories>
     <repository>
       <id>jitpack.io</id>
@@ -33,12 +33,12 @@
     <dependency>
       <groupId>org.json</groupId>
       <artifactId>json</artifactId>
-      <version>20180130</version>
+      <version>20180813</version>
     </dependency>
     <dependency>
       <groupId>com.github.RMLCio</groupId>
       <artifactId>RMLC-api</artifactId>
-      <version>v1.0</version>
+      <version>v1.5</version>
     </dependency>
     <!--
     <dependency>
@@ -60,7 +60,7 @@
     <dependency>
       <groupId>com.opencsv</groupId>
       <artifactId>opencsv</artifactId>
-      <version>4.0</version>
+      <version>4.5</version>
     </dependency>
     <dependency>
       <groupId>com.h2database</groupId>
@@ -81,6 +81,16 @@
       <groupId>org.slf4j</groupId>
       <artifactId>slf4j-log4j12</artifactId>
       <version>1.5.6</version>
+    </dependency>
+    <dependency>
+      <groupId>com.github.dachafra</groupId>
+      <artifactId>morph-rdb</artifactId>
+      <version>v3.9.15</version>
+    </dependency>
+    <dependency>
+      <groupId>com.github.morph-csv</groupId>
+      <artifactId>rmlfno2rmlc</artifactId>
+      <version>0.2</version>
     </dependency>
   </dependencies>
 

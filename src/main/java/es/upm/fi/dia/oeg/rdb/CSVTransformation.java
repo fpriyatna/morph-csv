@@ -1,7 +1,6 @@
 package es.upm.fi.dia.oeg.rdb;
 
-import com.opencsv.CSVReader;
-import com.opencsv.CSVWriter;
+/*
 import org.apache.commons.lang3.math.NumberUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -268,4 +267,4 @@ public class CSVTransformation {
         }
         return s;
     }
-}
+}*/

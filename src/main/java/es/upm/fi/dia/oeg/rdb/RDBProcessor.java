@@ -1,5 +1,5 @@
 package es.upm.fi.dia.oeg.rdb;
-
+/*
 
 import es.upm.fi.dia.oeg.Utils;
 import es.upm.fi.dia.oeg.rmlc.api.model.*;
@@ -281,3 +281,4 @@ public class RDBProcessor{
 
 
 }
+*/

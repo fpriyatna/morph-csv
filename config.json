@@ -1,13 +1,8 @@
 {
-  "mysqlURL":"jdbc:mysql://172.17.0.2:6306",
-  "mysqluser":"root",
-  "mysqlpassword":"david",
-  "datasets":[
+  "sources":[
     {
-      "databaseName": "train",
-      "source":"https://raw.githubusercontent.com/dachafra/spaingtfs/master/datasets/madrid/train.zip",
-      "compression":"zip",
-      "mapping":"/Users/dchaves/Documents/proyectos/rmlc/RMLC/src/main/resources/rmlc-mappings/join.rmlc.ttl"
+      "csvw":"https://raw.githubusercontent.com/oeg-upm/obda4csv/master/example/annotations.csvw.json",
+      "yarrrml": "https://raw.githubusercontent.com/morph-csv/rmlfno2rmlc/master/mapping.yml"
     }
   ]
 }

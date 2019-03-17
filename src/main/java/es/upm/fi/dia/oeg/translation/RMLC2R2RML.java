@@ -1,6 +1,7 @@
 package es.upm.fi.dia.oeg.translation;
 
-import es.upm.fi.dia.oeg.Utils;
+
+import es.upm.fi.dia.oeg.model.RMLCMapping;
 import es.upm.fi.dia.oeg.rmlc.api.model.*;
 import org.apache.commons.rdf.api.IRI;
 
@@ -9,35 +10,35 @@ import java.io.FileOutputStream;
 import java.io.OutputStreamWriter;
 import java.nio.charset.StandardCharsets;
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
-public class MappingTransformation {
+public class RMLC2R2RML {
 
-    private String r2rml="";
+    private String r2rml;
 
-    public void generateR2RML(Utils utils){
-        HashMap<String, Collection<TriplesMap>> triples=utils.getMappings();
-        for(Map.Entry<String, Collection<TriplesMap>> entry : triples.entrySet()){
-            String file_name = entry.getKey();
-            Collection<TriplesMap> triplesMaps = entry.getValue();
-            r2rml = getPrefix(utils.getMappingContent(utils.getMappingPath(file_name)))+"\n\n";
-            triplesMaps.forEach(triplesMap -> {
-                r2rml += "<"+triplesMap.getNode().ntriplesString().split("#")[1]+"\n";
-                r2rml += createLogicalTable(triplesMap.getLogicalSource());
-                r2rml += createSubjectMap(triplesMap.getSubjectMap());
-                r2rml += createPredicatesObjectMaps(triplesMap.getPredicateObjectMaps())+".\n\n";
-            });
-            try {
-                BufferedWriter writer = new BufferedWriter
-                        (new OutputStreamWriter(new FileOutputStream("datasets/" + file_name + "/mapping.r2rml.ttl"), StandardCharsets.UTF_8));
-                writer.write(r2rml);
-                writer.close();
-            }catch (Exception e){
+    public String getR2RML(){
+        return r2rml;
+    }
 
-            }
+    public void generateR2RML(RMLCMapping rmlc){
+        r2rml ="";
+        Collection<TriplesMap> triplesMaps = rmlc.getTriples();
+        r2rml = getPrefix(rmlc.getContent())+"\n\n";
+        triplesMaps.forEach(triplesMap -> {
+            r2rml += "<"+triplesMap.getNode().ntriplesString().split("#")[1]+"\n";
+            r2rml += createLogicalTable(triplesMap.getLogicalSource());
+            r2rml += createSubjectMap(triplesMap.getSubjectMap());
+            r2rml += createPredicatesObjectMaps(triplesMap.getPredicateObjectMaps())+".\n\n";
+        });
+        try {
+            BufferedWriter writer = new BufferedWriter
+                    (new OutputStreamWriter(new FileOutputStream("datasets/" + rmlc + "/mapping.r2rml.ttl"), StandardCharsets.UTF_8));
+            writer.write(r2rml);
+            writer.close();
+        }catch (Exception e){
+
         }
+
     }
 
     private String getPrefix(String mappingContent){
@@ -53,7 +54,7 @@ public class MappingTransformation {
 
     private String createLogicalTable(LogicalSource logicalSource){
        return "\trr:logicalTable [ \n\t\trr:tableName \"\\\""
-                +((SQLBaseTableOrView) logicalSource).getTableName().toLowerCase().replace(".csv","")
+                +((Source) logicalSource).getSourceName().toLowerCase().replace(".csv","")
                 +"\\\"\"; \n\t];\n";
     }
 

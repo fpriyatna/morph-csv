@@ -1,4 +1,4 @@
-package es.upm.fi.dia.oeg;
+package es.upm.fi.dia.oeg.utils;
 
 
 import org.apache.commons.cli.*;
@@ -32,6 +32,9 @@ public class CommandLineProcessor {
                 "URI or path to query file (required)");
         cliOptions.addOption("c", "config file", true,
                 "URI or path to the config file (required");
+        cliOptions.addOption("e", "engine (morph default)", true,
+                "Engine to choose (ontop/morph)");
+
 
         return cliOptions;
     }

@@ -1,11 +1,9 @@
-package es.upm.fi.dia.oeg.rdb;
+package es.upm.fi.dia.oeg.utils;
 
 
 import org.apache.commons.io.FileUtils;
-import org.apache.jena.atlas.json.JsonObject;
 import org.json.JSONArray;
 import org.json.JSONObject;
-import org.json.JSONString;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -16,10 +14,10 @@ import java.net.URL;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
-public class DatasetImport {
+public class DatasetUnzip {
 
 
-    private static final Logger _log = LoggerFactory.getLogger(DatasetImport.class);
+    private static final Logger _log = LoggerFactory.getLogger(DatasetUnzip.class);
 
     public static void downloadAndUnzip(JSONArray datasets){
         try {
@@ -36,6 +34,7 @@ public class DatasetImport {
                         FileUtils.copyURLToFile(new URL(source_string), f);
                     }
                     else {
+                        f = new File(relativePath + "/data");
                         FileUtils.copyDirectory(new File(source_string), f);
                     }
 

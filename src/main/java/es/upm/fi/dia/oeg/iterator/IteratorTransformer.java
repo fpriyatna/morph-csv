@@ -1,6 +1,6 @@
 package es.upm.fi.dia.oeg.iterator;
 
-
+/*
 import es.upm.fi.dia.oeg.Utils;
 import es.upm.fi.dia.oeg.rmlc.processor.RMLCIteratorGenerator;
 import org.json.JSONArray;
@@ -50,3 +50,4 @@ public class IteratorTransformer {
 
     }
 }
+*/
