@@ -25,14 +25,17 @@ public class RMLC2R2RML {
         Collection<TriplesMap> triplesMaps = rmlc.getTriples();
         r2rml = getPrefix(rmlc.getContent())+"\n\n";
         triplesMaps.forEach(triplesMap -> {
-            r2rml += "<"+triplesMap.getNode().ntriplesString().split("#")[1]+"\n";
+            if(triplesMap.getNode().ntriplesString().matches(".*#.*"))
+                r2rml += "<"+triplesMap.getNode().ntriplesString().split("#")[1]+"\n";
+            else
+                r2rml += "<"+triplesMap.getNode().ntriplesString().split("/")[triplesMap.getNode().ntriplesString().split("/").length-1]+"\n";
             r2rml += createLogicalTable(triplesMap.getLogicalSource());
             r2rml += createSubjectMap(triplesMap.getSubjectMap());
             r2rml += createPredicatesObjectMaps(triplesMap.getPredicateObjectMaps())+".\n\n";
         });
         try {
             BufferedWriter writer = new BufferedWriter
-                    (new OutputStreamWriter(new FileOutputStream("datasets/" + rmlc + "/mapping.r2rml.ttl"), StandardCharsets.UTF_8));
+                    (new OutputStreamWriter(new FileOutputStream("mapping.r2rml.ttl"), StandardCharsets.UTF_8));
             writer.write(r2rml);
             writer.close();
         }catch (Exception e){
@@ -54,7 +57,7 @@ public class RMLC2R2RML {
 
     private String createLogicalTable(LogicalSource logicalSource){
        return "\trr:logicalTable [ \n\t\trr:tableName \"\\\""
-                +((Source) logicalSource).getSourceName().toLowerCase().replace(".csv","")
+                +((Source) logicalSource).getSourceName().split("/")[((Source) logicalSource).getSourceName().split("/").length-1].replace(".csv","").toUpperCase()
                 +"\\\"\"; \n\t];\n";
     }
 
@@ -94,7 +97,7 @@ public class RMLC2R2RML {
     }
 
     private String createObjectMap (ObjectMap objectMap, List<PredicateMap> predicateMaps){
-        String reference = "\t\trr:objectMap [\n";
+        String reference = "";
         if(objectMap.getFunction()!=null && !objectMap.getFunction().isEmpty()){
             for(PredicateMap p: predicateMaps) {
                 String column_name=p.getConstant().ntriplesString();
@@ -104,29 +107,60 @@ public class RMLC2R2RML {
                 else{
                     column_name=column_name.split("/")[column_name.split("/").length-1].replace(">", "");
                 }
-                reference += "\t\t\trr:column \"" +column_name+ "\";\n";
+                reference += "\t\trr:objectMap[\n\t\t\trr:column \"" +column_name+ "\";\n\t\t];\n";
             }
         }
         if(objectMap.getDatatype()!=null && !objectMap.getDatatype().getIRIString().isEmpty()){
-            reference += "\t\t\trr:datatype <"+objectMap.getDatatype().getIRIString()+">;\n";
+            reference += "\t\trr:objectMap[\n\t\t\trr:datatype <"+objectMap.getDatatype().getIRIString()+">;\n\t\t];\n";
         }
         if(objectMap.getColumn()!=null && !objectMap.getColumn().isEmpty()){
-            reference += "\t\t\trr:column \""+objectMap.getColumn()+"\";\n";
+            reference += "\t\trr:objectMap[\n\t\t\trr:column \""+objectMap.getColumn()+"\";\n\t\t];\n";
         }
         if(objectMap.getTemplate()!=null && !objectMap.getTemplateString().isEmpty()){
-            reference +="\t\t\trr:template \""+objectMap.getTemplateString()+"\";\n";
+            reference +="\t\trr:objectMap[\n\t\t\trr:template \""+objectMap.getTemplateString()+"\";\n\t\t];\n";
         }
-        return reference+"\t\t];\n";
+        if(objectMap.getConstant()!=null && !objectMap.getConstant().ntriplesString().isEmpty()){
+            reference +="\t\trr:objectMap[\n\t\t\trr:constant "+objectMap.getConstant().ntriplesString()+";\n\t\t];\n";
+        }
+        return reference;
 
     }
 
     private String createRefObjectMap(RefObjectMap refObjectMap, PredicateMap predicateMap){
         String reference = "\t\trr:objectMap [\n";
-        reference += "\t\t\trr:parentTriplesMap <"+refObjectMap.getParentMap().getNode().ntriplesString().split("#")[1]+";\n";
+        if(refObjectMap.getParentMap().getNode().ntriplesString().matches(".*#.*"))
+            reference += "\t\t\trr:parentTriplesMap <"+refObjectMap.getParentMap().getNode().ntriplesString().split("#")[1]+";\n";
+        else{
+            String r = refObjectMap.getParentMap().getNode().ntriplesString().split("/")[refObjectMap.getParentMap().getNode().ntriplesString().split("/").length-1];
+            reference += "\t\t\trr:parentTriplesMap <"+r+";\n";
+        }
+
         for(Join j : refObjectMap.getJoinConditions()) {
             reference += "\t\t\trr:joinCondition [\n";
-            reference += "\t\t\t\t rr:child \\\""+predicateMap.getConstant().ntriplesString().split("#")[1].replace(">", "")+"\\\";\n";
-            reference += "\t\t\t\t rr:parent \"\\\""+predicateMap.getConstant().ntriplesString().split("#")[1].replace(">", "")+"\\\"\";\n";
+            if(j.getChild().matches(".*\\(.*")){
+                if(predicateMap.getConstant().ntriplesString().matches(".*#.*"))
+                    reference += "\t\t\t\t rr:child \"" + predicateMap.getConstant().ntriplesString().split("#")[1].replace(">", "") + "\";\n";
+                else {
+                    String c = predicateMap.getConstant().ntriplesString().split("/")[predicateMap.getConstant().ntriplesString().split("/").length - 1];
+                    reference +="\t\t\t\t rr:child \"" + c.replace(">", "") + "\";\n";
+                }
+            }
+            else{
+                    reference+="\t\t\t\t rr:child \""+j.getChild().replace("{","").replace("}","")+"\";\n";
+            }
+            if(j.getParent().matches(".*\\(.*")) {
+                if (predicateMap.getConstant().ntriplesString().matches(".*#.*")) {
+                    reference += "\t\t\t\t rr:parent \"" + predicateMap.getConstant().ntriplesString().split("#")[1].replace(">", "") + "\";\n";
+                } else {
+                    String c = predicateMap.getConstant().ntriplesString().split("/")[predicateMap.getConstant().ntriplesString().split("/").length - 1];
+                    reference += "\t\t\t\t rr:parent \"" + c.replace(">", "") + "\";\n";
+                }
+            }
+            else{
+                reference+="\t\t\t\t rr:parent \""+j.getParent().replace("{","").replace("}","")+"\";\n";
+            }
+
+
             reference += "\t\t\t];\n";
         }
 

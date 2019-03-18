@@ -1,12 +1,13 @@
 package es.upm.fi.dia.oeg.rdb;
 
 import es.upm.fi.dia.oeg.model.CSV;
-import es.upm.fi.dia.oeg.rmlc.api.model.ObjectMap;
-import org.apache.jena.atlas.json.JSON;
+import es.upm.fi.dia.oeg.model.CSVW;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 
 public class CSVWUtils {
 
@@ -76,5 +77,27 @@ public class CSVWUtils {
         id.put("titles",column+"_J");
         id.put("datatype",datatype);
         return id;
+    }
+
+    public static List<String> getDefaultHeaders(String url, CSVW csvw){
+        List<String> defaultHeaders = new ArrayList<>();
+
+        JSONArray tables = (JSONArray) csvw.getContent().get("tables");
+        //FN1
+        for(Object o : tables){
+            String csvURL = ((JSONObject) o).getString("url");
+            if(url.equals(csvURL)) {
+                JSONArray columns = ((JSONObject) o).getJSONObject("tableSchema").getJSONArray("columns");
+                for (Object c : columns) {
+                    JSONObject annotations = (JSONObject) c;
+                    if (annotations.has("default")) {
+                        defaultHeaders.add(annotations.getString("titles"));
+                    }
+                }
+            }
+        }
+
+        return defaultHeaders;
+
     }
 }

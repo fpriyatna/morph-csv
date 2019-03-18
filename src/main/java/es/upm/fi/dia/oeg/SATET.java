@@ -1,6 +1,7 @@
 package es.upm.fi.dia.oeg;
 
 import es.upm.fi.dia.oeg.model.Dataset;
+import es.upm.fi.dia.oeg.model.RDB;
 import es.upm.fi.dia.oeg.rdb.RDBGenerator;
 import es.upm.fi.dia.oeg.translation.RMLC2R2RML;
 import es.upm.fi.dia.oeg.translation.yarrrml2RMLC;
@@ -47,11 +48,12 @@ public class SATET
 
             //generate RDB
             RDBGenerator rdbGenerator = new RDBGenerator(dataset);
+            rdbGenerator.generateSchemaRDB();
             rdbGenerator.generateRDB();
             //generate R2RML
-           // RMLC2R2RML rmlc2R2RML = new RMLC2R2RML();
-           // rmlc2R2RML.generateR2RML(dataset.getRmlcMappingY());
-           // dataset.setR2rmlMapping(rmlc2R2RML.getR2RML());
+            RMLC2R2RML rmlc2R2RML = new RMLC2R2RML();
+            rmlc2R2RML.generateR2RML(dataset.getRmlcMappingY());
+            dataset.setR2rmlMapping(rmlc2R2RML.getR2RML());
             //load RDB
 
             //execute query

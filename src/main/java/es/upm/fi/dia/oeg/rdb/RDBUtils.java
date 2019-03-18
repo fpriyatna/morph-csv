@@ -6,10 +6,7 @@ import es.upm.fi.dia.oeg.rmlc.api.model.*;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 
 public class RDBUtils {
     private String schema;
@@ -26,7 +23,6 @@ public class RDBUtils {
                 }
             }
         });
-        System.out.println(schema);
         return schema;
     }
 
@@ -100,7 +96,7 @@ public class RDBUtils {
     }
 
 
-    private boolean checkColumnInMapping(String header, TriplesMap triplesMap){
+    public static boolean checkColumnInMapping(String header, TriplesMap triplesMap){
         boolean flag = false;
         if(triplesMap.getSubjectMap().getTemplate().getColumnNames().contains(header.trim())){
             flag= true;
@@ -128,6 +124,75 @@ public class RDBUtils {
         }
 
         return flag;
+    }
+
+
+    public HashMap<String,String> getColumnsFromFunctions(List<PredicateObjectMap> predicateObjectMaps){
+        HashMap<String,String> columnsFunctions = new HashMap<>();
+
+        for(PredicateObjectMap p : predicateObjectMaps){
+            List<ObjectMap> objectMaps = p.getObjectMaps();
+            for(ObjectMap o : objectMaps){
+                if(o.getFunction()!=null && !o.getFunction().isEmpty()){
+                    List<PredicateMap> predicateMaps = p.getPredicateMaps();
+                    for(PredicateMap pm : predicateMaps){
+                        String t= pm.getConstant().ntriplesString();
+                        if(t.matches(".*#.*"))
+                            columnsFunctions.put(t.split("#")[1].replace(">","") + " VARCHAR(200)",o.getFunction());
+                        else
+                            columnsFunctions.put(t.split("/")[t.split("/").length-1].replace(">","")+ " VARCHAR(200)",o.getFunction());
+                    }
+                }
+            }
+        }
+        return columnsFunctions;
+
+    }
+
+    public HashMap<String,HashMap<String,String>> getJoinFunctions(List<PredicateObjectMap> predicateObjectMaps, String child_table_name){
+        HashMap<String,HashMap<String,String>> joinFunction = new HashMap<>();
+        for(PredicateObjectMap p : predicateObjectMaps){
+            List<RefObjectMap> refObjectMaps = p.getRefObjectMaps();
+            List<PredicateMap>  predicateMaps = p.getPredicateMaps();
+            for(RefObjectMap refObjectMap : refObjectMaps){
+                String parent_table_name = ((Source) refObjectMap.getParentMap().getLogicalSource()).getSourceName();
+                parent_table_name = parent_table_name.split("/")[parent_table_name.split("/").length-1].replace(".csv","").toUpperCase();
+                List<Join> join = refObjectMap.getJoinConditions();
+                for(Join j : join ){
+                    String child_function = j.getChild();
+                    String parent_function = j.getParent();
+                    for(PredicateMap pm : predicateMaps){
+                        HashMap<String, String> functions_column = new HashMap<>();
+                        String t="";
+                        if(t.matches(".*#.*"))
+                            t= pm.getConstant().ntriplesString().split("#")[1].replace(">","") + " VARCHAR(200)";
+                        else
+                            t = pm.getConstant().ntriplesString().split("/")[pm.getConstant().ntriplesString().split("/").length-1].replace(">","") + " VARCHAR(200)";
+                        boolean indexs=false;
+                        if(!parent_function.isEmpty() && parent_function.matches(".*\\(.*")) {
+                            functions_column.put(t, parent_function);
+                            joinFunction.put(parent_table_name, (HashMap<String, String>) functions_column.clone());
+                            indexs = true;
+                        }
+                        functions_column.clear();
+                        if((!child_function.isEmpty() && child_function.matches(".*\\(.*")) || indexs) {
+                            if((!child_function.isEmpty() && child_function.matches(".*\\(.*"))) {
+                                functions_column.put(t, child_function);
+                                joinFunction.put(child_table_name, (HashMap<String, String>) functions_column.clone());
+                            }
+                            else{
+                                String child = child_function.replace("{","").replace("}","");
+                                functions_column.put(child,child_function);
+                                joinFunction.put(child_table_name, (HashMap<String, String>) functions_column.clone());
+                            }
+                        }
+
+                    }
+                }
+            }
+        }
+        return joinFunction;
+
     }
 
 

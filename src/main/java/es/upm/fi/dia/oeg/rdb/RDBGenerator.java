@@ -15,6 +15,7 @@ public class RDBGenerator {
     private RMLCMapping rmlc;
     private CSVW csvw;
     private ArrayList<CSV> csvs;
+    private RDB rdb;
 
 
     public RDBGenerator(Dataset d){
@@ -23,11 +24,11 @@ public class RDBGenerator {
        csvs = d.getCsvFiles();
     }
 
-    public RDB generateRDB(){
+    public void generateSchemaRDB(){
         normalize();
         String schema=createTables();
-        RDB rdb = new RDB("someName",schema);
-        return rdb;
+        rdb = new RDB("db",schema);
+
     }
 
     private void normalize(){
@@ -72,6 +73,40 @@ public class RDBGenerator {
                         }
                     }
                     csvs.add(new CSV(column,column+".csv",csvURL,newCSV));
+                }
+                if(((JSONObject) c).has("null")){
+                    for(CSV csv: csvs) {
+                        if(csv.getUrl().equals(csvURL)){
+                            CSVUtils.putNull(csv.getRows(),(JSONObject) c);
+                        }
+                        else if(csv.getParentUrl()!=null && csv.getParentUrl().equals(csvURL)){
+                            CSVUtils.putNull(csv.getRows(),(JSONObject) c);
+                        }
+                    }
+                }
+                if(((JSONObject) c).has("datatype")){
+                    JSONObject datatype = ((JSONObject) c).getJSONObject("datatype");
+                    String column = ((JSONObject) c).getString("titles");
+                    if(datatype.has("format") && datatype.getString("base").equals("date")){
+                        for(CSV csv : csvs){
+                            if(csv.getUrl().equals(csvURL)){
+                                CSVUtils.changeFormat(column,csv.getRows(),(JSONObject)c);
+                            }
+                            else if(csv.getParentUrl()!=null && csv.getParentUrl().equals(csvURL)){
+                                CSVUtils.changeFormat(column,csv.getRows(),(JSONObject)c);
+                            }
+                        }
+                    }
+                }
+                if(((JSONObject)c).has("default")){
+                    for(CSV csv: csvs){
+                        if(csv.getUrl().equals(csvURL)){
+                            CSVUtils.putDefault(csv.getRows(),(JSONObject) c);
+                        }
+                        else if(csv.getParentUrl()!=null && csv.getParentUrl().equals(csvURL)){
+                            CSVUtils.putDefault(csv.getRows(),(JSONObject) c);
+                        }
+                    }
                 }
             }
             for(Object c: newAnnotations){
@@ -128,7 +163,43 @@ public class RDBGenerator {
         return rdbUtils.createSQLSchema(rmlc.getTriples(),csvs,csvw);
     }
 
-    private void constraintsGeneration(){
+    public void generateRDB(){
+        RDBConexion rdbConexion = new RDBConexion();
+        rdbConexion.createDatabase(rdb.getName(),rdb.getContent());
+        HashMap<String,HashMap<String,String>> functions = new HashMap<>();
+        HashMap<String,HashMap<String,String>> joinFunctions = new HashMap<>();
+        rmlc.getTriples().forEach(triplesMap -> {
+            for(CSV csv : csvs){
+                if(csv.getUrl().equals(((Source)triplesMap.getLogicalSource()).getSourceName())){
+                    String sourceUrl = ((Source) triplesMap.getLogicalSource()).getSourceName();
+                    String tableName = sourceUrl.split("/")[sourceUrl.split("/").length-1].replace(".csv","").toUpperCase();
+                    if(csv.getRows()==null){
+                        String url = csv.getParentUrl();
+                        for(CSV aux: csvs){
+                            if(aux.getUrl().equals(url)){
+                                rdbConexion.loadCSVinTable(triplesMap,aux.getRows(),tableName,rdb.getName());
+                                break;
+                            }
+                        }
+
+                    }
+                    else {
+                        rdbConexion.loadCSVinTable(triplesMap, csv.getRows(), tableName, rdb.getName());
+                    }
+                    break;
+                }
+            }
+        });
+        rdbConexion.addForeignKeys(rdb.getName());
+        rmlc.getTriples().forEach(triplesMap -> {
+            RDBUtils rdbutils = new RDBUtils();
+            String sourceUrl = ((Source)triplesMap.getLogicalSource()).getSourceName();
+            String tableName =sourceUrl.split("/")[sourceUrl.split("/").length-1].replace(".csv","").toUpperCase();
+            functions.put(tableName,rdbutils.getColumnsFromFunctions(triplesMap.getPredicateObjectMaps()));
+            joinFunctions.putAll(rdbutils.getJoinFunctions(triplesMap.getPredicateObjectMaps(),tableName));
+        });
+        rdbConexion.updateDataWithFunctions(functions,rdb.getName(),false);
+        rdbConexion.updateDataWithFunctions(joinFunctions,rdb.getName(),true);
 
     }
 

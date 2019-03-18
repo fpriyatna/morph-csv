@@ -1,6 +1,11 @@
 package es.upm.fi.dia.oeg.rdb;
 
 
+import es.upm.fi.dia.oeg.model.CSVW;
+import org.json.JSONArray;
+import org.json.JSONObject;
+import scala.Int;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -15,8 +20,8 @@ public class CSVUtils {
         separatedCSV.add(new String[]{"id", column});
         Integer index = getIndexColumnFromHeader(headers,column);
         Integer id =0;
-        for (String[] rows : csv){
-            String[] data = rows[index].split(separator);
+        for (int i=1;i<csv.size();i++){
+            String[] data = csv.get(i)[index].split(separator);
             for(String d : data){
                 separatedCSV.add(new String[]{Integer.toString(id),d});
             }
@@ -46,8 +51,84 @@ public class CSVUtils {
         return  cleanedCSV;
     }
 
+    public static void changeFormat(String column, List<String[]> csv, JSONObject annotations){
+
+        Integer index = getIndexColumnFromHeader(csv.get(0),column);
+        if(index!=null) {
+            String format = annotations.getJSONObject("datatype").getString("format");
+            Integer yearIndex = null, monthIndex = null, dayIndex = null;
+            for (int i = 0; i < format.toCharArray().length; i++) {
+                if (yearIndex == null && format.toCharArray()[i] == 'y') {
+                    yearIndex = i;
+                }
+                if (monthIndex == null && format.toCharArray()[i] == 'M') {
+                    monthIndex = i;
+                }
+                if (dayIndex == null && format.toCharArray()[i] == 'd') {
+                    dayIndex = i;
+                }
+            }
+            for (int j = 1; j < csv.size(); j++) {
+                char[] date = csv.get(j)[index].toCharArray();
+                String year = "", month = "", day = "";
+                for (Integer i = 0; i < date.length; i++) {
+                    if (i == yearIndex) {
+                        year = getPieceofDate(i, 4, date);
+                    }
+
+                    if (i == monthIndex) {
+                        month = getPieceofDate(i, 2, date);
+                        if (month.toCharArray().length < 2) {
+                            month = "0" + month;
+                        }
+                    }
+                    if (i == dayIndex) {
+                        day = getPieceofDate(i, 2, date);
+                        if (day.toCharArray().length < 2) {
+                            day = "0" + day;
+                        }
+                    }
+                }
+                csv.get(j)[index] = year + "-" + month + "-" + day;
+            }
+        }
+
+    }
+
+    private static String getPieceofDate(Integer index, int max, char[] date){
+
+        StringBuilder aux = new StringBuilder();
+        Integer size=0;
+        while(index<date.length && Character.toString(date[index]).matches("\\d") && size<max){
+            aux.append(date[index]);
+            index++;
+            size++;
+        }
+        return aux.toString();
+    }
+
+    public static void putNull(List<String[]> csv, JSONObject annotations){
+        String column = annotations.getString("titles");
+        Integer index = getIndexColumnFromHeader(csv.get(0),column);
+        for(int i=1; i<csv.size();i++) {
+            if (csv.get(i)[index].equals(annotations.getString("null"))) {
+                csv.get(i)[index] = "NULL";
+            }
+        }
+    }
+
+    public static void putDefault(List<String[]> csv, JSONObject annotations){
+        String column = annotations.getString("titles");
+        Integer index = getIndexColumnFromHeader(csv.get(0),column);
+        for(int i=1; i<csv.size();i++) {
+            if (csv.get(i)[index].equals("")) {
+                csv.get(i)[index] = annotations.get("default").toString();
+            }
+        }
+    }
+
     private static Integer getIndexColumnFromHeader(String[] headers, String column){
-        Integer index =0;
+        Integer index =null;
         for(int i=0; i<headers.length;i++){
             if(headers[i].trim().equals(column.trim())){
                 index = i;
