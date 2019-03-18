@@ -7,22 +7,20 @@ import java.util.List;
 public class CSVUtils {
 
 
-    public static List<String[]> generateCSVfromSeparator(String separator, String column, List<String[]> csv, List<Integer> pk){
+    public static List<String[]> generateCSVfromSeparator(String separator, String column, List<String[]> csv){
 
         String[] headers = csv.get(0);
 
         List<String[]> separatedCSV = new ArrayList<>();
+        separatedCSV.add(new String[]{"id", column});
         Integer index = getIndexColumnFromHeader(headers,column);
+        Integer id =0;
         for (String[] rows : csv){
             String[] data = rows[index].split(separator);
             for(String d : data){
-                ArrayList<String> finalRow = new ArrayList<>();
-                for(Integer pkindex : pk){
-                    finalRow.add(rows[pkindex]);
-                }
-                finalRow.add(d);
-                separatedCSV.add(finalRow.toArray(new String[finalRow.size()]));
+                separatedCSV.add(new String[]{Integer.toString(id),d});
             }
+            id++;
         }
 
 
@@ -33,15 +31,17 @@ public class CSVUtils {
         String[] headers = csv.get(0);
         List<String[]> cleanedCSV = new ArrayList<>();
         Integer index= getIndexColumnFromHeader(headers,column);
-
+        Integer fkid=0;
         for(int i=0; i<csv.size() ;i++){
-            ArrayList<String> row = new ArrayList<>();
-            for(int j=0; j< csv.get(i).length ; j++) {
-                if (index != j) {
-                    row.add(csv.get(i)[j]);
-                }
+            String[] row = csv.get(i);
+            if(i!=0) {
+                row[index] = Integer.toString(fkid);
+                fkid++;
             }
-            cleanedCSV.add(row.toArray(new String[row.size()]));
+            else {
+                row[index] = row[index]+"_J";
+            }
+            cleanedCSV.add(row);
         }
         return  cleanedCSV;
     }

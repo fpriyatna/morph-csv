@@ -7,36 +7,72 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 public class RDBUtils {
+    private String schema;
 
 
-    public String createTable(TriplesMap tripleMap, CSV csv, CSVW csvw){
+    public String createSQLSchema(Collection<TriplesMap> triplesMaps, ArrayList<CSV> csvs, CSVW csvw){
+        schema = "";
+
+        triplesMaps.forEach(triplesMap -> {
+            for(CSV csv : csvs){
+                if(csv.getUrl().equals(((Source)triplesMap.getLogicalSource()).getSourceName())){
+                    schema += createTable(triplesMap,csv,csvs,csvw);
+                    break;
+                }
+            }
+        });
+        System.out.println(schema);
+        return schema;
+    }
+
+    public String createTable(TriplesMap tripleMap, CSV csv, ArrayList<CSV> csvs, CSVW csvw){
         MappingUtils m = new MappingUtils();
-        String[] headers = csv.getRows().get(0);
-        CSVWUtils csvwUtils = new CSVWUtils();
+        String[] headers =null;
+        if(csv.getRows()==null) {
+              for(CSV c: csvs){
+                  if(c.getUrl().equals(csv.getParentUrl())){
+                      headers = c.getRows().get(0);
+                  }
+              }
+        }
+        else
+            headers = csv.getRows().get(0);
         ArrayList<String> primaryKeys = m.getPrimaryKeys(tripleMap.getSubjectMap());
         String sourceUrl = ((Source)tripleMap.getLogicalSource()).getSourceName();
-        HashMap<String,ArrayList<String>> foreignKeys = m.getForeignKeys(tripleMap.getPredicateObjectMaps(),headers);
-        JSONArray annotations = csvwUtils.getAnnotationsFromSource(csvw.getContent().getJSONArray("tables"),sourceUrl);
+        HashMap<String,ArrayList<String>> foreignKeys = m.getForeignKeys(tripleMap);
+        JSONArray annotations = CSVWUtils.getAnnotationsFromSource(csvw.getContent().getJSONArray("tables"),csv);
         String tableName = sourceUrl.split("/")[sourceUrl.split("/").length-1].replace(".csv","").toUpperCase();
         String table="DROP TABLE IF EXISTS "+tableName+";\nCREATE TABLE "+tableName+" ";
         table+="(";
 
         for(String field : headers){
             if(checkColumnInMapping(field,tripleMap)) {
+                JSONObject datatype = null;
+                Object def=null;
                 for (Object o : annotations) {
-                    String column = ((JSONObject) o).getString("title");
+                    String column = ((JSONObject) o).getString("titles");
                     if (column.equals(field.trim())) {
-                        JSONObject datatype = null;
                         if (((JSONObject) o).has("datatype"))
                             datatype = ((JSONObject) o).getJSONObject("datatype");
-                        table += "`" + field.toUpperCase().trim() + "` " + getTypeForColumn(datatype) + ",";
+                        if(((JSONObject) o).has("default")){
+                            def = ((JSONObject) o).get("default");
+                        }
                     }
+
                 }
+                if(datatype!=null)
+                    table += "`" + field.toUpperCase().trim() + "` " + CSVWUtils.fromBasetoDatatype(datatype.getString("base"));
+                else
+                    table += "`" + field.toUpperCase().trim() + "` VARCHAR(200)";
+                if(def==null)
+                    table += ",";
+                else
+                    table += " DEFAULT "+def.toString()+",";
             }
         }
 
@@ -63,22 +99,29 @@ public class RDBUtils {
         return table;
     }
 
-    private String getTypeForColumn(JSONObject datatype){
-        return CSVWUtils.fromBasetoDatatype(datatype.getString("base"));
-    }
 
     private boolean checkColumnInMapping(String header, TriplesMap triplesMap){
         boolean flag = false;
-        if(triplesMap.getSubjectMap().getTemplateString().matches(".*"+header+".*")){
+        if(triplesMap.getSubjectMap().getTemplate().getColumnNames().contains(header.trim())){
             flag= true;
         }
         else {
             for(PredicateObjectMap pom : triplesMap.getPredicateObjectMaps()){
                 for(ObjectMap ob : pom.getObjectMaps()){
-                    if(ob.getColumn()!=null || ob.getTemplate()!=null){
-                        if(ob.getColumn().matches(".*"+header+".*")){
+                    if(ob.getColumn()!=null){
+                        if(ob.getColumn().matches(".*"+header.trim()+".*")){
                             flag = true;
                         }
+                    }
+                    else if(ob.getTemplate()!=null){
+                        if(ob.getTemplate().getColumnNames().contains(header.trim())){
+                            flag = true;
+                        }
+                    }
+                }
+                for(RefObjectMap refObjectMap : pom.getRefObjectMaps()){
+                    if(refObjectMap.getJoinCondition(0).getChild().matches(".*"+header.trim()+".*")){
+                        flag= true;
                     }
                 }
             }

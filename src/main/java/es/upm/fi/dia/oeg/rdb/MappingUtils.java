@@ -2,6 +2,8 @@ package es.upm.fi.dia.oeg.rdb;
 
 import es.upm.fi.dia.oeg.model.RMLCMapping;
 import es.upm.fi.dia.oeg.rmlc.api.model.*;
+import org.apache.commons.rdf.api.RDFTerm;
+
 import java.util.*;
 
 public class MappingUtils {
@@ -52,60 +54,86 @@ public class MappingUtils {
 
     }
 
-    public HashMap<String,ArrayList<String>> getForeignKeys (List<PredicateObjectMap> pom, String[] headers){
+    public HashMap<String,ArrayList<String>> getForeignKeys (TriplesMap tp){
         HashMap<String,ArrayList<String>> foreignKeys = new HashMap<>();
+        //todo foreign keys
 
-        for (PredicateObjectMap po : pom){
-            for (RefObjectMap refObjectMap : po.getRefObjectMaps()){
-                ArrayList<String> fkreference = new ArrayList<>();boolean parentflag=false,childflag=false;
-                String parent = refObjectMap.getJoinCondition(0).getParent();
-                String child = refObjectMap.getJoinCondition(0).getChild();
-                for(String header : headers){
-                    if(parent.matches(header)){
-                        parentflag = true;
+        for (PredicateObjectMap po : tp.getPredicateObjectMaps()) {
+            for (RefObjectMap refObjectMap : po.getRefObjectMaps()) {
+                ArrayList<String> fkreference = new ArrayList<>();
+                ArrayList<String> parent = getColumnsFromTemplate(refObjectMap.getJoinCondition(0).getParent());
+                ArrayList<String> child = getColumnsFromTemplate(refObjectMap.getJoinCondition(0).getChild());
+                boolean isPK = isPKinParentTripleMap(refObjectMap.getParentMap().getSubjectMap(),parent);
+                if (!parent.isEmpty() && !child.isEmpty() && isPK) {
+                    String pcolumns = "", ccolumns = "";
+                    for (String p : parent) {
+                        pcolumns += p + ",";
                     }
-                    if(child.matches(header)){
-                        childflag = true;
+                    for (String c : child) {
+                        ccolumns += c + ",";
                     }
+                    fkreference.add(ccolumns.substring(0, ccolumns.length() - 1));
+                    fkreference.add(pcolumns.substring(0, pcolumns.length() - 1));
+                    String tableName = ((Source) refObjectMap.getParentMap().getLogicalSource()).getSourceName();
+                    tableName = tableName.split("/")[tableName.split("/").length - 1].replace(".csv", "").toUpperCase();
+                    foreignKeys.put(tableName, fkreference);
                 }
 
-                if(!parentflag){
-                    parent = po.getPredicateMap(0).getConstant().ntriplesString();
-                }
-                if(!childflag){
-                    child = po.getPredicateMap(0).getConstant().ntriplesString();
-                }
-
-                fkreference.add(child);
-                fkreference.add(parent);
-                String tableName = ((Source)refObjectMap.getParentMap().getLogicalSource()).getSourceName();
-                tableName = tableName.split("/")[tableName.split("/").length-1].replace(".csv","").toUpperCase();
-                foreignKeys.put(tableName,fkreference);
             }
         }
+
 
 
         return foreignKeys;
     }
 
+
+    private ArrayList<String> getColumnsFromTemplate(String template){
+        ArrayList<String> fk = new ArrayList<>();
+        if(!template.contains("(")) {
+            String[] aux = template.split("\\{");
+            for (int i = 1; i < aux.length; i++) {
+                fk.add(aux[i].split("}")[0]);
+            }
+        }
+        return fk;
+    }
+
+    private boolean isPKinParentTripleMap(SubjectMap s, ArrayList<String> parent){
+        boolean checker = false;
+        Integer cont = 0;
+        List<String> pks = s.getTemplate().getColumnNames();
+        if(pks.size()==parent.size()){
+            for(String pk : pks){
+                if(parent.contains(pk)){
+                    cont++;
+                }
+            }
+        }
+        if(cont == pks.size()){
+            checker = true;
+        }
+
+        return checker;
+    }
+
     public String generateTriplesMapfromSeparator(String[] headers,RMLCMapping rmlc, String sourceUrl){
-        String separetedColumn = headers[headers.length-1].trim();
+        String id = headers[0];
+        String values = headers[1];
         StringBuilder tripleMap = new StringBuilder();
 
-        tripleMap.append("<"+separetedColumn+">\n");
+        tripleMap.append("<"+values+">\n");
         //logicalSource
-        tripleMap.append("\trml:logicalSource [\n\t\trml:source \""+separetedColumn+".csv\";\n\t\trml:referenceFormulation ql:CSV\n\t];\n");
+        tripleMap.append("\trml:logicalSource [\n\t\trml:source \""+values+".csv\";\n\t\trml:referenceFormulation ql:CSV\n\t];\n");
         //subjectMap
-        tripleMap.append("\trr:subjectMap [\n\t\t rr:template \"http://ex.com/"+separetedColumn+"/");
-        for(String s : headers){
-            tripleMap.append("{"+s.trim()+"}");
-        }
+        tripleMap.append("\trr:subjectMap [\n\t\t rr:template \"http://ex.com/"+values+"/{"+id+"}-{"+values+"}");
+
         tripleMap.append("\";\n\t];\n");
 
         tripleMap.append("\trr:predicateObjectMap[\n");
-        tripleMap.append("\t\trr:predicate ex:"+separetedColumn+";\n");
+        tripleMap.append("\t\trr:predicate ex:"+values+";\n");
         tripleMap.append("\t\trr:objectMap [\n");
-        tripleMap.append("\t\t\trml:reference \""+separetedColumn+"\";\n");
+        tripleMap.append("\t\t\trml:reference \""+values+"\";\n");
         tripleMap.append("\t\t];\n\n\t];\n.");
         StringBuilder changeRmlcContet = fromObjectToRefObjectMap(rmlc.getContent(),headers,sourceUrl);
         changeRmlcContet.append(tripleMap.toString());
@@ -115,13 +143,10 @@ public class MappingUtils {
 
 
     private StringBuilder fromObjectToRefObjectMap(String content, String[] headers, String sourceUrl){
-        StringBuilder join = new StringBuilder();
         StringBuilder finalcontent= new StringBuilder();
-        String column = headers[headers.length-1].trim();
-        for(String s : headers){
-            if(!s.trim().equals(column.trim()))
-                join.append("{"+s.trim()+"}");
-        }
+        String parentJoin = headers[0];
+        String column = headers[1];
+
         ArrayList<String> splitedContent = new ArrayList<>(Arrays.asList(content.split("\n")));
         boolean flag = false;
         for(int i=0; i<splitedContent.size();i++){
@@ -132,8 +157,8 @@ public class MappingUtils {
                 if(splitedContent.get(i).matches(".*"+column+".*")){
                     splitedContent.set(i,"\t\t\trr:parentTriplesMap <"+column+">;");
                     splitedContent.add(i+1,"\t\t\trmlc:joinCondition [");
-                    splitedContent.add(i+2,"\t\t\t\trmlc:child \""+join.toString()+"\";");
-                    splitedContent.add(i+3,"\t\t\t\trmlc:parent \""+join.toString()+"\";");
+                    splitedContent.add(i+2,"\t\t\t\trmlc:child \"{"+column+"_J}\";");
+                    splitedContent.add(i+3,"\t\t\t\trmlc:parent \"{"+parentJoin+"}\";");
                     splitedContent.add(i+4,"\t\t\t];");
                     break;
                 }

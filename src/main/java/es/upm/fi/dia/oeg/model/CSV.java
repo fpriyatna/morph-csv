@@ -5,7 +5,6 @@ import com.opencsv.CSVReader;
 
 import java.io.*;
 import java.net.URL;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 
@@ -13,6 +12,7 @@ public class CSV {
 
     private String nameFile;
     private String url;
+    private String parentUrl;
     private CSVReader reader;
     private List<String[]> rows;
 
@@ -33,6 +33,13 @@ public class CSV {
         this.rows = rows;
     }
 
+    public CSV(String nameFile,String url, String parentUrl, List<String[]> rows){
+        this.nameFile =nameFile;
+        this.url = url;
+        this.parentUrl = parentUrl;
+        this.rows = rows;
+    }
+
 
     public CSV(String nameFile, String url, URL csv) {
         this.nameFile = nameFile;
@@ -50,6 +57,14 @@ public class CSV {
 
     public List<String[]> getRows() {
         return rows;
+    }
+
+    public String getParentUrl() {
+        return parentUrl;
+    }
+
+    public void setParentUrl(String parentUrl) {
+        this.parentUrl = parentUrl;
     }
 
     public void setRows (List<String[]> rows){
