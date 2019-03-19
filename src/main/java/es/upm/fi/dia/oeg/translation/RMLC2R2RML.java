@@ -20,7 +20,7 @@ public class RMLC2R2RML {
         return r2rml;
     }
 
-    public void generateR2RML(RMLCMapping rmlc){
+    public void generateR2RML(RMLCMapping rmlc,String rdbName){
         r2rml ="";
         Collection<TriplesMap> triplesMaps = rmlc.getTriples();
         r2rml = getPrefix(rmlc.getContent())+"\n\n";
@@ -35,7 +35,7 @@ public class RMLC2R2RML {
         });
         try {
             BufferedWriter writer = new BufferedWriter
-                    (new OutputStreamWriter(new FileOutputStream("mapping.r2rml.ttl"), StandardCharsets.UTF_8));
+                    (new OutputStreamWriter(new FileOutputStream("examples/"+rdbName+".r2rml.ttl"), StandardCharsets.UTF_8));
             writer.write(r2rml);
             writer.close();
         }catch (Exception e){
@@ -52,6 +52,7 @@ public class RMLC2R2RML {
                 prefixes += lines[i]+".\n";
                 i++;
         }
+        prefixes +="@prefix rr: <http://www.w3.org/ns/r2rml#>.";
         return prefixes;
     }
 
@@ -62,7 +63,7 @@ public class RMLC2R2RML {
     }
 
     private String createSubjectMap(SubjectMap subjectMap){
-        String subject="\trr:subjectMap [ \n\t\ta rr Subject;\n";
+        String subject="\trr:subjectMap [ \n";
 
         if(!subjectMap.getTemplateString().isEmpty()){
             subject += "\t\trr:template \"" + subjectMap.getTemplateString() +"\";\n";

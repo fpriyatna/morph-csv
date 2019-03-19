@@ -24,11 +24,11 @@ public class RDBGenerator {
        csvs = d.getCsvFiles();
     }
 
-    public void generateSchemaRDB(){
+    public RDB generateSchemaRDB(){
         normalize();
         String schema=createTables();
         rdb = new RDB("db",schema);
-
+        return rdb;
     }
 
     private void normalize(){

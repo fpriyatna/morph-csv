@@ -1,0 +1,154 @@
+@prefix schema: <http://schema.org/>.
+@prefix rmlc: <http://www.ex.org/ns/rmlc#>.
+@prefix rml: <http://semweb.mmlab.be/ns/rml#>.
+@prefix ql: <http://semweb.mmlab.be/ns/ql#>.
+@prefix rr: <http://www.w3.org/ns/r2rml#>.
+@prefix sql: <http://w3.org/ns/sql#>.
+@prefix gtfs: <http://vocab.gtfs.org/terms#>.
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#>.
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>.
+@prefix ex: <http://ex.org/ns/ex#>.
+@prefix rr: <http://www.w3.org/ns/r2rml#>.
+
+<modifiedDates>
+	rr:logicalTable [ 
+		rr:tableName "\"MODIFIEDDATES\""; 
+	];
+	rr:subjectMap [ 
+		rr:template "http://ex.com/modifiedDates/{id}-{modifiedDates}";
+		rr:termType <http://www.w3.org/ns/r2rml#IRI>;
+	];
+	rr:predicateObjectMap [ 
+		rr:predicateMap [ rr:constant <http://ex.org/ns/ex#modifiedDates> ];
+		rr:objectMap[
+			rr:column "modifiedDates";
+		];
+	];
+.
+
+<publication>
+	rr:logicalTable [ 
+		rr:tableName "\"COMMENTS\""; 
+	];
+	rr:subjectMap [ 
+		rr:template "http://ex.org/Comment/{date}{username}{comment}";
+		rr:termType <http://www.w3.org/ns/r2rml#IRI>;
+	];
+	rr:predicateObjectMap [ 
+		rr:predicateMap [ rr:constant <http://schema.org/dateModified> ];
+		rr:objectMap [
+			rr:parentTriplesMap <modifiedDates>;
+			rr:joinCondition [
+				 rr:child "modifiedDates_J";
+				 rr:parent "id";
+			];
+		];
+	];
+	rr:predicateObjectMap [ 
+		rr:predicateMap [ rr:constant <http://schema.org/comment> ];
+		rr:objectMap[
+			rr:column "comment";
+		];
+	];
+	rr:predicateObjectMap [ 
+		rr:predicateMap [ rr:constant <http://schema.org/dateCreated> ];
+		rr:objectMap[
+			rr:column "date";
+		];
+	];
+	rr:predicateObjectMap [ 
+		rr:predicateMap [ rr:constant <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> ];
+		rr:objectMap[
+			rr:constant <http://schema.org/SocialMediaPosting>;
+		];
+	];
+	rr:predicateObjectMap [ 
+		rr:predicateMap [ rr:constant <http://schema.org/author> ];
+		rr:objectMap [
+			rr:parentTriplesMap <person>;
+			rr:joinCondition [
+				 rr:child "username";
+				 rr:parent "author";
+			];
+		];
+	];
+.
+
+<person>
+	rr:logicalTable [ 
+		rr:tableName "\"PEOPLE\""; 
+	];
+	rr:subjectMap [ 
+		rr:template "http://ex.org/Person/{name}{ln1}{ln2}";
+		rr:termType <http://www.w3.org/ns/r2rml#IRI>;
+	];
+	rr:predicateObjectMap [ 
+		rr:predicateMap [ rr:constant <http://schema.org/familyName> ];
+		rr:objectMap[
+			rr:template "{ln1} {ln2}";
+		];
+	];
+	rr:predicateObjectMap [ 
+		rr:predicateMap [ rr:constant <http://schema.org/email> ];
+		rr:objectMap[
+			rr:column "email";
+		];
+	];
+	rr:predicateObjectMap [ 
+		rr:predicateMap [ rr:constant <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> ];
+		rr:objectMap[
+			rr:constant <http://schema.org/Person>;
+		];
+	];
+	rr:predicateObjectMap [ 
+		rr:predicateMap [ rr:constant <http://ex.org/ns/ex#hasCountry> ];
+		rr:objectMap [
+			rr:parentTriplesMap <country>;
+			rr:joinCondition [
+				 rr:child "cName";
+				 rr:parent "cName";
+			];
+		];
+	];
+	rr:predicateObjectMap [ 
+		rr:predicateMap [ rr:constant <http://schema.org/name> ];
+		rr:objectMap[
+			rr:template "{name} {ln1} {ln2}";
+		];
+	];
+	rr:predicateObjectMap [ 
+		rr:predicateMap [ rr:constant <http://schema.org/givenName> ];
+		rr:objectMap[
+			rr:column "name";
+		];
+	];
+	rr:predicateObjectMap [ 
+		rr:predicateMap [ rr:constant <http://ex.org/ns/ex#nOfCourse> ];
+		rr:objectMap[
+			rr:column "nCourses";
+		];
+	];
+.
+
+<country>
+	rr:logicalTable [ 
+		rr:tableName "\"COUNTRY\""; 
+	];
+	rr:subjectMap [ 
+		rr:template "http://ex.org/country/{cName}";
+		rr:termType <http://www.w3.org/ns/r2rml#IRI>;
+	];
+	rr:predicateObjectMap [ 
+		rr:predicateMap [ rr:constant <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> ];
+		rr:objectMap[
+			rr:constant <http://schema.org/Country>;
+		];
+	];
+	rr:predicateObjectMap [ 
+		rr:predicateMap [ rr:constant <http://ex.org/ns/ex#officialName> ];
+		rr:objectMap[
+			rr:column "cOfficialName";
+		];
+	];
+.
+

@@ -6,8 +6,10 @@ import es.upm.fi.dia.oeg.rdb.RDBGenerator;
 import es.upm.fi.dia.oeg.translation.RMLC2R2RML;
 import es.upm.fi.dia.oeg.translation.yarrrml2RMLC;
 import es.upm.fi.dia.oeg.utils.CommandLineProcessor;
+import es.upm.fi.dia.oeg.utils.RunQuery;
 import es.upm.fi.dia.oeg.utils.Utils;
 import org.apache.commons.cli.CommandLine;
+import org.apache.commons.cli.Option;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
@@ -25,16 +27,14 @@ public class SATET
 
         CommandLine commandLine = CommandLineProcessor.parseArguments(args);
 
-        if(commandLine.getOptions().length < 2 || commandLine.getOptions().length > 3 ){
+        if(commandLine.getOptions().length < 2 || commandLine.getOptions().length > 2 ){
             CommandLineProcessor.displayHelp();
         }
 
-        String configPath = commandLine.getOptionValue("c");
-        String query = commandLine.getOptionValue("q");
-        String engine = "";
-        if(commandLine.getOptions().length==3){
-            engine = commandLine.getOptionValue("e");
+        for(Option o:commandLine.getOptions()){
+
         }
+        String configPath = commandLine.getOptionValue("c");
 
         JSONArray config = Utils.readConfiguration(configPath);
         ArrayList<Dataset> datasetArrayList = new ArrayList<>();
@@ -48,15 +48,25 @@ public class SATET
 
             //generate RDB
             RDBGenerator rdbGenerator = new RDBGenerator(dataset);
-            rdbGenerator.generateSchemaRDB();
+            dataset.setRdb(rdbGenerator.generateSchemaRDB());
+            //load RDB
             rdbGenerator.generateRDB();
             //generate R2RML
             RMLC2R2RML rmlc2R2RML = new RMLC2R2RML();
-            rmlc2R2RML.generateR2RML(dataset.getRmlcMappingY());
+            rmlc2R2RML.generateR2RML(dataset.getRmlcMappingY(),dataset.getRdb().getName());
             dataset.setR2rmlMapping(rmlc2R2RML.getR2RML());
-            //load RDB
-
             //execute query
+            String engine ="";
+            if(commandLine.hasOption("e")){
+                engine = commandLine.getOptionValue("e");
+            }
+            if(commandLine.hasOption("q")){
+                RunQuery.runQueryMorph(dataset.getRdb(),commandLine.getOptionValue("q"));
+            }
+            else{
+                RunQuery.runBatchMorph(dataset.getRdb());
+            }
+
         }
 
         //csvw2rmlc

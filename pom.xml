@@ -5,11 +5,11 @@
   <modelVersion>4.0.0</modelVersion>
 
   <groupId>es.upm.fi.dia.oeg</groupId>
-  <artifactId>satet</artifactId>
+  <artifactId>morph-csv</artifactId>
   <version>1.0-SNAPSHOT</version>
 
-  <name>satet</name>
-  <url>http://www.github.com/SATET-OBDA/SATET</url>
+  <name>morph-csv</name>
+  <url>http://www.github.com/morph-csv/morph-csv</url>
   <repositories>
     <repository>
       <id>jitpack.io</id>
